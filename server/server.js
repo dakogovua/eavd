@@ -13,7 +13,7 @@ const app = express();
 const cors = require('cors');
 app.use(cors());
 
-
+let withdraw =  require('./withdraw');
 
 
 
@@ -35,8 +35,6 @@ const urlencodedParser = bodyParser.urlencoded({extended: false});
   response.send(`[OK] Server is running on localhost:${app.get('port')}`);
 });
 
-let router =  require('./router');
-// router.date = date;
-// router.time = time;
 
-app.use('/actions', router);
+
+app.use('/actions', withdraw);

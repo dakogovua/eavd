@@ -13,7 +13,7 @@ const app = express();
 const cors = require('cors');
 app.use(cors());
 
-let withdraw =  require('./withdraw');
+let withdraw =  require('./withdraw/routes');
 
 
 

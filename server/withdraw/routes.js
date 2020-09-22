@@ -39,55 +39,9 @@ var connection;
       text : ""
     }
 
+var table;
 
-withdraw.post("/withdraw/test", async (request, response) => {
-    try {
-      
-      
-      console.log('/withdraw/test');
-      if (!request.body) return response.sendStatus(400);
-      console.log('request.body',  date, time, request.body);
 
-        const result = await connection.execute(
-          `BEGIN helper.mysemaphore(:cursor); END;`,
-         {
-            // sal: 6000,
-            cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
-         }
-        );
-        
-        const resultSet = result.outBinds.cursor;
-        let row;
-        let arr=[];
-        while ((row = await resultSet.getRow())) {
-          console.log(row);
-          arr.push(row);
-        }
-        
-        // always close the ResultSet
-        await resultSet.close();
-
-        resp_mess = {
-          type : "success",
-          title : "ok",
-          table: "",
-          text : JSON.stringify(arr)
-        }
-
-        response.send(JSON.stringify(resp_mess));
-        response.end();
-
-    }
-    catch (err) {
-      console.error('Whoops!');
-      console.error(err);
-      process.exit(1);
-    }
-    finally {
-
-      console.log('finaly test');
-    }
-});
 
 withdraw.post("/withdraw", async (request, response) => {
   try {
@@ -95,42 +49,47 @@ withdraw.post("/withdraw", async (request, response) => {
     if (!request.body) return response.sendStatus(400);
     console.log('request.body',  date, time, request.body);
 
-
-    // let fexec = await connection.execute('select helper.f_volia_5_withdraw from dual');
-    // console.log('f exec', fexec);
-    // await connection.close();
-    // return;
-
-    // let semaphore = false;
-
     let finOrgan = request.body[0];
-    // finOrgan = 'Воля'; //For test purposes only
-    let table = '';
-    let sql =``;
+   // let sql =``;
 
-    //    table = "IMPORT_UPDATE_COMISIYA_2" //For test purposes only
     switch (finOrgan) {
       case 'ЦФР':
         table = "IMPORT_UPDATE_COMISIYA_2";
-        sql = `INSERT INTO ${table} 
-                (ndogovor_id, comment3)
-          VALUES  (:1, :2 )`;
+        // sql = `INSERT INTO ${table} 
+        //         (ndogovor_id, comment3)
+        //   VALUES  (:1, :2 )`;
         break;
       case 'Idea':
-        table = "IMPORT_UPDATE_COMISIYA_TEMP"
+        table = "IMPORT_UPDATE_COMISIYA_TEMP";
+        // sql = `INSERT INTO ${table} 
+        // (ndogovor_id, comment3)
+        //   VALUES  (:1, :2 )`;
         break;
       case 'Tas':
-        // code block
+        table = "IMPORT_UPDATE_COMISIYA_TEMP";
+        // sql = `INSERT INTO ${table} 
+        // (ndogovor_id, comment3)
+        //   VALUES  (:1, :2 )`;
         break;
+
       case 'Воля':
-        // var sql = "select t.deal_id , t.comment2 from import_update_comisiya_temp t";
         table = 'IMPORT_UPDATE_COMISIYA_TEMP';
-        //готовим sql запрос 
-        sql = `INSERT INTO ${table} 
-                  (ndogovor_id, comment3)
-              VALUES  (:1, :2 )`;
+        // sql = `INSERT INTO ${table} 
+        //           (ndogovor_id, comment3)
+        //       VALUES  (:1, :2 )`;
         break;
-        
+
+        case 'Укртелеком':
+          table = 'IMPORT_UPDATE_COMISIYA';
+          // sql = `INSERT INTO ${table} 
+          //         (ndogovor_id, comment3)
+          //     VALUES  (:1, :2 )`;
+        break;
+
+        case 'Galaxy':
+          table = 'import_update_comisiya_temp';
+        break;
+
         default:
           response.send(`Locked! - ${finOrgan} что-то не то`);
           resp_mess = {
@@ -144,50 +103,42 @@ withdraw.post("/withdraw", async (request, response) => {
         return;
     }
 
-    
-    
+    let sql = `INSERT INTO ${table} 
+      (ndogovor_id, comment3)
+     VALUES  (:1, :2 )`;
+
     // data prepare
     let binds = request.body;
     binds.shift();
     binds.forEach((element) => {
-        // console.log('i',i);
-
         element.forEach((el, j, theArray) => {
-            el=el.replace('\\n', '')
-            el = el.trim()
-            theArray[j] = el
-           // console.log('el', el, 'i', i, 'j', j)
+            if (el !== null){
+              el=el.replace('\\n', '')
+              el = el.trim()
+              theArray[j] = el
+            }
         });
     });
-
-    // console.log('binds', binds)
     
     let ressemaphore = await connection.execute("select * from semaphore");
     for (const item of ressemaphore.rows) { 
       console.log(item.includes(table));
       if (item.includes(table)) {
-        // semaphore = true;
         resp_mess = {
           type : "error",
           title : "Semaphore заблокирован",
           table : table,
           text : `По состоянию на ${date}, ${time} <br> ${item}`
         }
-       // console.log('response', response)
-        //response.send(`Locked! - ${date}, ${time} ${item}`);
         response.send(JSON.stringify(resp_mess));
-     //   await connection.close();
         return; // Stop script
       }
     }
     
     let seminsert = await connection.execute(`INSERT INTO semaphore (table_name, user_name, start_time, path) VALUES ('${table}', 'quasar', '${date} ${time}', 'nodeJS')`);
     await connection.commit();
-    
-   // return; //Stop
-    
+
     const options = {
-      //autoCommit: true,
       batchErrors: true,
     };
 
@@ -199,34 +150,28 @@ withdraw.post("/withdraw", async (request, response) => {
     
     await connection.commit();
 
-    // console.log('res', res.rowsAffected);
-    
     resp_mess = {
-      type : "pin",
-      title : "Залило рядков:",
+      type : "next_pin",
+      title : "Залило рядки",
       table: table,
       text : `По состоянию на ${date}, ${time} <br> 
       Залило рядков - ${res.rowsAffected}`
     }
-    
-    
-    
+
     // function sleep(ms) {
     //   return new Promise(resolve => setTimeout(resolve, ms));
     // }
 
     // await sleep(5000);
 
-    
-
-   //  await connection.close();
      
      response.send(resp_mess);
      return; // Stop script
 
   }
   catch (err) {
-    console.error('Whoops! 1 ');
+    console.error('Whoops! insert 1 ');
+    semclose(table);
     console.error(err);
     process.exit(1);
   }
@@ -243,53 +188,93 @@ withdraw.post("/withdraw", async (request, response) => {
   withdraw.post("/withdraw/pin", async (request, response) => {
     try {
       if (!request.body) return response.sendStatus(400);
-      console.log('request.body', request.body);
+      console.log('/withdraw/pin request.body', request.body, date, time);
      
       let finOrgan = request.body[0];
       let table = request.body[1];
 
       console.log('finOrgan ', finOrgan, 'table ', table);
 
-      let sql2, sql3, sql4;
+      let sql_pinator, sql_pin_not_found;
       switch (finOrgan) {
         case 'ЦФР':
-          sql2 = `
+          sql_pinator = `
             BEGIN
               DBMS_OUTPUT.ENABLE(NULL);
               helper.p_cfr_All;
             END;`;
 
-            sql3 = `
-              BEGIN helper.p_cfr_3_not_found(:cursor); 
-            END;`;
-
-            sql4 = `
+            sql_pin_not_found = `
               BEGIN helper.p_cfr_3_not_found(:cursor); 
             END;`;
 
           break;
         case 'Idea':
-          sql2 = `
-          BEGIN
-            helper.idea_2_pin;
-          END;
-          `;
-          break;
-        case 'Tas':
-          sql2 = ``;
-          break;
-        case 'Воля':
-          console.log('case ВОЛЯ')
-          sql2 = `
+          //пробуем пропинить
+          sql_pinator = `
             BEGIN
               DBMS_OUTPUT.ENABLE(NULL);
-              helper.p_volia_All;
-            END;`;
+              helper.p_idea_ALL;
+            END;
+          `;
 
-            sql3 = sql4 = `
-            BEGIN helper.p_volia_check(:cursor); END;
+          sql_pin_not_found = `
+          BEGIN helper.p_idea_5_check(:cursor); 
+          END;
+          `;
+
+          break;
+        case 'Tas':
+          sql_pinator = `
+          BEGIN
+            DBMS_OUTPUT.ENABLE(NULL);
+            helper.p_tas_All;
+          END;`;
+
+          sql_pin_not_found = `
+            BEGIN helper.p_tas_not_found(:cursor); 
+          END;`;
+          break;
+
+          case 'Укртелеком':
+            sql_pinator = `
+            BEGIN
+              DBMS_OUTPUT.ENABLE(NULL);
+              helper.p_ukrtelecom_All;
+            END;
             `;
 
+            sql_pin_not_found = `
+              BEGIN helper.p_ukrtelecom_not_found(:cursor); 
+            END;`;
+
+          break;
+
+          case 'Galaxy':
+            sql_pinator = `
+            BEGIN
+              DBMS_OUTPUT.ENABLE(NULL);
+              helper.p_galaxy_All;
+            END;
+            `;
+
+            sql_pin_not_found = `
+              BEGIN helper.p_galaxy_3_not_found(:cursor); 
+            END;`;
+
+          break;
+
+        case 'Воля':
+          console.log('case ВОЛЯ')
+          sql_pinator = `
+            BEGIN
+              DBMS_OUTPUT.ENABLE(NULL);
+              helper.p_volia_fake_pin;
+            END;`;
+
+            sql_pin_not_found  = `
+            BEGIN helper.p_volia_check(:cursor); END;
+            `;
 
           break;
           
@@ -301,20 +286,21 @@ withdraw.post("/withdraw", async (request, response) => {
               table : table,
               text : `Что-то пошло не так по состоянию на ${date}, ${time} `
             }
+            response.send(JSON.stringify(resp_mess));
+            response.end();
             semclose(table);
           return;
       }
 
   
-    sql2res = await connection.execute(sql2);
+    sql_pinatorres = await connection.execute(sql_pinator); // эта штука делает пинование и возвращает результат
 
 
       let result;
       let DBMS_OUTPUT = 'err';
       let i = 0
       do {
-        i++;
-        console.log ('i', i);
+        //получаем результат
         result = await connection.execute(
           `BEGIN
              DBMS_OUTPUT.GET_LINE(:ln, :st);
@@ -326,18 +312,15 @@ withdraw.post("/withdraw", async (request, response) => {
             if (result.outBinds.st === 0){
               DBMS_OUTPUT = result.outBinds.ln;           
             }
-        
 
       } while (result.outBinds.st === 0);
-      // Воля   !=0 ==> sql 3 select & Воля ==> end
-      // other  !=0 ==> sql 3 select ==> ok, cancel. ok ==> finish ==> return report.
       
       console.log('DBMS_OUTPUT', DBMS_OUTPUT)
 
       if  (DBMS_OUTPUT != 0){
-        // выдает список того что не пропинилось
+        // выдает список того что не пропинилось, выводим что не удалось
         const result = await connection.execute(
-          sql3,
+          sql_pin_not_found,
             {
                 cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
             }
@@ -355,22 +338,22 @@ withdraw.post("/withdraw", async (request, response) => {
         await resultSet.close();
 
         resp_mess = {
-          type : "select",
-          title : "ok",
-          table: "",
+          type : "next_check",
+          title : "Not found",
+          table: finOrgan,
           text : JSON.stringify(arr)
         }
 
       }
 
       if  (DBMS_OUTPUT == 0){
-        //хренячит дальше отзыв.
+        //отправляем сообщение, что всё оке. 
 
         resp_mess = {
-                type : "select",
-                title : `Осталось непропиненых ${DBMS_OUTPUT}, на ${date}, ${time}`,
-                table : table,
-                text : `Осталось непропиненых ${result.outBinds.ln}, на ${date}, ${time} `
+                type : "next_check",
+                title : `Всё пропинилось, на ${date}, ${time}`,
+                table : finOrgan,
+                text : `Нажмите OK чтобы отозвать`
               }
       }
 
@@ -392,16 +375,309 @@ withdraw.post("/withdraw", async (request, response) => {
 
 });
 
+withdraw.post("/withdraw/check", async (request, response) => {
+  try {
 
+    if (!request.body) return response.sendStatus(400);
+    console.log('request.body check', request.body, date, time);
+
+    let finOrgan = request.body[0];
+
+    switch (finOrgan) {
+      case 'ЦФР':
+        sql_check = `
+          BEGIN
+           helper.p_cfr_4_check(:cursor); 
+          END;`;
+        break;
+
+      case 'Idea':
+        sql_check =  `
+        BEGIN 
+          helper.p_idea_5_check(:cursor); 
+        END;`;
+        break;
+
+      case 'Tas':
+        sql_check =  `
+        BEGIN 
+          helper.p_tas_5_check(:cursor); 
+        END;`;
+        break;
+
+        case 'Укртелеком':
+          sql_check =  `
+          BEGIN helper.p_ukrtelecom_4_sel(:cursor); 
+          END;`;
+          break;
+
+        case 'Galaxy':
+          sql_check =  `
+           BEGIN helper.p_galaxy_4_check(:cursor); 
+          END;`;
+        break;
+
+      case 'Воля':
+        sql_check =  `
+        BEGIN 
+          helper.p_volia_check(:cursor); 
+        END;`;
+        break;
+
+        default:
+          //response.send(`Nxt Locked! - ${finOrgan} что-то не то`);
+          resp_mess = {
+            type : "error",
+            title : `Check. Непонятная ошибка ${finOrgan}, ${table}`,
+            table : table,
+            text : `Что-то пошло не так по состоянию на ${date}, ${time} `
+          }
+          response.send(JSON.stringify(resp_mess));
+          response.end();
+          semclose(table);
+        return;
+    }
+
+    const result = await connection.execute(
+      sql_check,
+     {
+        cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+     }
+    );
+    
+    const resultSet = result.outBinds.cursor;
+    let row;
+    let arr=[];
+    while ((row = await resultSet.getRow())) {
+      console.log(row);
+      arr.push(row);
+    }
+    
+    // always close the ResultSet
+    await resultSet.close();
+
+    resp_mess = {
+      type : "next_finish",
+      title : `Проверьте данные перед отзывом в ${date}, ${time}`,
+      table: finOrgan,
+      text : JSON.stringify(arr)
+    }
+
+
+    response.send(JSON.stringify(resp_mess));
+    response.end();
+
+  }
+  catch (err) {
+    console.error('Whoops! check');
+    console.error(err);
+    semclose(table);
+    process.exit(1);
+  }
+  finally {
+
+    console.log('finaly check');
+  }
+
+})
+//////////////////////////// FINISH
+withdraw.post("/withdraw/finish", async (request, response) => {
+  try {
+
+    if (!request.body) return response.sendStatus(400);
+    console.log('request.body', request.body, date, time);
+
+    let finOrgan = request.body[0];
+    let sql_withdraw;
+
+    switch (finOrgan) {
+      case 'ЦФР':
+        sql_withdraw = `
+          BEGIN
+           helper.p_cfr_4_check(:cursor); 
+          END;`;
+        break;
+
+      case 'Idea':
+        sql_withdraw =  `
+        BEGIN 
+          helper.p_idea_6_withdraw; 
+        END;`;
+        break;
+
+      case 'Укртелеком':
+        sql_withdraw =  `
+          BEGIN 
+            helper.p_ukrtelecom_6_packet_withdraw; 
+          END;`;
+        break;
+
+        case 'Galaxy':
+          sql_withdraw =  `
+            BEGIN 
+              helper.p_galaxy_5_package_withdraw; 
+            END;`;
+          break;
+
+      case 'Tas':
+        sql_withdraw =  `
+        BEGIN 
+          helper.p_tas_6_withdraw; 
+        END;`;
+        break;
+
+      case 'Воля':
+        sql_withdraw =  `
+        BEGIN 
+          helper.p_volia_withdraw;
+        END;`;
+        break;
+        
+        default:
+          //response.send(`Nxt Locked! - ${finOrgan} что-то не то`);
+          resp_mess = {
+            type : "error",
+            title : `Check. Непонятная ошибка ${finOrgan}, ${table}`,
+            table : table,
+            text : `Что-то пошло не так по состоянию на ${date}, ${time} `
+          }
+          semclose(table);
+        return;
+    }
+    //запускаем отзыватор
+      let res_sql_withdraw = await connection.execute(
+        sql_withdraw
+      );
+    //await connection.commit();
+
+    //После отзыва показываем лог отзывов
+    const sql_finish_iniversal_checker = `
+      BEGIN 
+        helper.p_universal_checker(:cursor); 
+      END;
+    `;
+
+    const result = await connection.execute(
+      sql_finish_iniversal_checker,
+     {
+        cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+     }
+    );
+    
+    const resultSet = result.outBinds.cursor;
+    let row;
+    let arr=[];
+    while ((row = await resultSet.getRow())) {
+      console.log(row);
+      arr.push(row);
+    }
+    // always close the ResultSet
+    await resultSet.close();
+    resp_mess = {
+      type : "next_end",
+      title : `Резултирующая таблица log отзывов. ${date}, ${time}`,
+      table: finOrgan,
+      text : JSON.stringify(arr)
+    }
+
+
+    response.send(JSON.stringify(resp_mess));
+    response.end();
+  }
+  catch (err) {
+    console.error('Whoops! finish');
+    console.error(err);
+    semclose(table);
+    process.exit(1);
+  }
+  finally {
+
+    console.log('finaly finish');
+  }
+
+})
+
+
+//////////////////////TEST
+withdraw.post("/withdraw/test", async (request, response) => {
+  try {
+    console.log('/withdraw/test');
+    if (!request.body) return response.sendStatus(400);
+    console.log('request.body',  date, time, request.body);
+
+      const result = await connection.execute(
+        `BEGIN helper.mysemaphore(:cursor); END;`,
+       {
+          // sal: 6000,
+          cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+       }
+      );
+      
+      const resultSet = result.outBinds.cursor;
+      let row;
+      let arr=[];
+      while ((row = await resultSet.getRow())) {
+        console.log(row);
+        arr.push(row);
+      }
+      
+      // always close the ResultSet
+      await resultSet.close();
+
+      resp_mess = {
+        type : "success",
+        title : "ok",
+        table: "",
+        text : JSON.stringify(arr)
+      }
+
+      response.send(JSON.stringify(resp_mess));
+      response.end();
+
+  }
+  catch (err) {
+    console.error('Whoops!');
+    console.error(err);
+    semclose(table);
+    process.exit(1);
+  }
+  finally {
+
+    console.log('finaly test');
+  }
+});
+
+
+withdraw.post("/withdraw/semclose", async (request, response) => {
+  try {
+
+    if (!request.body) return response.sendStatus(400);
+    console.log('request.body', request.body);
+
+    table = request.body[1];
+    semclose(table);
+  
+  }
+  catch (err) {
+    console.error('Whoops!');
+    console.error(err);
+    semclose(table);
+    process.exit(1);
+  }
+  finally {
+    console.log('finaly semclose');
+  }
+});
+  
 
 module.exports = withdraw;
 
 
 /*
 if(request.body[0] == 'GoNext'){
-     // let ressql2 = await connection.execute(sql2);
+     // let ressql_pinator = await connection.execute(sql_pinator);
       
-      console.log('GoNext request.body', date, time, request.body, sql2);
+      console.log('GoNext request.body', date, time, request.body, sql_pinator);
       resp_mess = {
         type : "error",
         title : "Вам нужно связаться с пользователем, кто блокирует работу",

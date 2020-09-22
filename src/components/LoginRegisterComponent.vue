@@ -5,10 +5,10 @@
         <q-input outlined class="q-mb-md" v-model="formData.email" type="email" label="Email" />
         <q-input outlined 
         v-if="tab == 'register'" class="q-mb-md" v-model="formData.password" type="password" label="password" />
-        <q-input outlined class="q-mb-md" v-model="formData.password" type="password" label="repeat password" />
+        <q-input outlined class="q-mb-md" v-model="formData.password2" type="password" label="repeat password" />
         <div class="row">
             <q-space/>
-            <q-btn :loading="loading4" color="primary" @click="simulateProgress(4)" style="width: 150px"
+            <q-btn :loading="loading4" color="primary" @click="simulateProgress(4)" :disable=fdisabled style="width: 150px"
                     type="submit">
                     {{tab}}
                     <template v-slot:loading>
@@ -19,6 +19,7 @@
             
 
         </div>
+       
     </q-form>
 </template>
 
@@ -33,7 +34,8 @@ export default {
             formData:{
                 name: '',
                 email: '',
-                password: ''
+                password: '',
+                password2: ''
             }
         }
     },
@@ -54,9 +56,22 @@ export default {
             console.log('login submit')
         }
         else{
-            console.log('register submit')
+           // console.log('register submit')
             this.registerUser(this.formData);
         }
+    }
+  },
+    computed:{
+    fdisabled(){
+      if (this.tab == 'login'){
+          return false;
+      }
+      if (this.formData.password != '' && this.formData.password == this.formData.password2){
+          return false;
+      }
+
+      return true;
+    
     }
   }
 }

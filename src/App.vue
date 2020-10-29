@@ -8,6 +8,12 @@
 
 
 export default {
-  name: 'App'
+  name: 'App',
+  mounted() {
+            console.log('mounted app')
+            }
 }
 </script>
+<style>
+
+</style>

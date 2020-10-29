@@ -13,6 +13,7 @@
     "@handsontable/vue": "^5.0.1",
     "@quasar/extras": "^1.0.0",
     "axios": "^0.18.1",
+    "cordova": "^10.0.0",
     "core-js": "^3.6.5",
     "cors": "^2.8.5",
     "express": "^4.17.1",
@@ -23,11 +24,17 @@
     "nodemailer": "^6.4.11",
     "oracledb": "^5.0.0",
     "quasar": "^1.0.0",
-    "save": "^2.4.0"
+    "save": "^2.4.0",
+    "xcodebuild": "^1.0.2"
   },
   "devDependencies": {
     "@quasar/app": "^2.0.0",
     "babel-eslint": "^10.0.1",
+    "devtron": "^1.4.0",
+    "electron": "^9.3.1",
+    "electron-debug": "^3.1.0",
+    "electron-devtools-installer": "^3.1.1",
+    "electron-packager": "^14.2.1",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-loader": "^3.0.3",

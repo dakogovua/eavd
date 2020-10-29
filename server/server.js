@@ -1,6 +1,4 @@
-var today = new Date();
-global.date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-global.time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+
 
 const express = require('express');
 const bodyParser = require("body-parser");
@@ -13,7 +11,7 @@ const app = express();
 const cors = require('cors');
 app.use(cors());
 
-let withdraw =  require('./withdraw/routes');
+
 
 
 
@@ -35,6 +33,32 @@ const urlencodedParser = bodyParser.urlencoded({extended: false});
   response.send(`[OK] Server is running on localhost:${app.get('port')}`);
 });
 
+var semclosepost = require('./semaphore/semclose')
+app.use('/actions/semclose', semclosepost);
 
+let withdraw =  require('./withdraw/routes');
+app.use('/actions/withdraw', withdraw);
 
-app.use('/actions', withdraw);
+let notes =  require('./notes/routes');
+app.use('/actions/notes', notes);
+
+var today = require('./timedate/timedate')
+
+app.use(function(err, req, res, next) {
+  console.error('err.stack', err.stack);
+  let date = today.date();
+  let time = today.time();
+
+  resp_mess = {
+    type : "error",
+    title : `Непонятная ошибка ${err.stack}`,
+    table : '',
+    text : `[["Что-то пошло не так по состоянию на ${date}, ${time} "]]`,
+    class: 'kossfullwidth'
+  }
+  res.send(JSON.stringify(resp_mess));
+  res.end();
+
+  // res.status(500).send('Something broke!');
+});
+

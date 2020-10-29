@@ -1,7 +1,7 @@
 //import Express from "express";
 
 const express = require('express');
-const withdraw = express.Router();
+const notes = express.Router();
 
 
 // var mail = require('../mail/mailconfig');
@@ -20,23 +20,31 @@ const e = require('express');
 
 // 1 - Insert data to table
 var insert = require('./insert')
-withdraw.use('/', insert)
+notes.use('/', insert)
 
 // 2 - PINing
-let pin = require('./pin');
-withdraw.use("/pin", pin)
+// let pin = require('./pin');
+// notes.use("/pin", pin)
 
-// 3 - CHECKing
+// 2 - CHECKing
+var select = require('./select')
+notes.use("/select",select)
+
 var check = require('./check')
-withdraw.use("/check",check)
+notes.use("/check", check)
+
+var finish = require('./finish')
+notes.use("/finish", finish)
+
+
 
 // 3 - FINISHing
-let finish = require('./finish')
-withdraw.use("/finish", finish)
+// let finish = require('./finish')
+// notes.use("/finish", finish)
 
 
 // let today = require('../timedate/timedate')
-// withdraw.post("/semclose", async (request, response) => {
+// notes.post("/semclose", async (request, response) => {
 //   try {
     
 //     var table;
@@ -100,8 +108,8 @@ withdraw.use("/finish", finish)
 //   await connection.close();
 // }
 
-var test = require('./test');
-withdraw.use('/test', test);
+// var test = require('./test');
+// notes.use('/test', test);
 
 
-module.exports = withdraw;
+module.exports = notes;

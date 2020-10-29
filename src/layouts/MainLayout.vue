@@ -54,13 +54,13 @@ const linksData = [
     title: 'Отозвать дело',
     caption: 'Пакетный отзыв дел из работы',
     icon: 'star',
-    link: '/'
+    link: '/#/withdraw'
   },
   {
-    title: 'Списать реестр в архив',
-    caption: 'Пакетное списание реестров в архив',
+    title: 'Заметки',
+    caption: 'Пакетные заметки дел',
     icon: 'code',
-    link: 'https://github.com/quasarframework'
+    link: '/#/notes'
   },
   {
     title: 'Discord Chat Channel',
